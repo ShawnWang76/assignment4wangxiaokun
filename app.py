@@ -75,6 +75,11 @@ class MagForm(FlaskForm):
 	max_mag = IntegerField("Plz input range max_mag")
 	submit = SubmitField('Submit')
 
+class Mag1Form(FlaskForm):
+	min_mag = IntegerField("Plz input range min_mag")
+	max_mag = IntegerField("Plz input range max_mag")
+	submit = SubmitField('Submit')
+
 
 
 class DateCheckForm(FlaskForm):
@@ -119,21 +124,45 @@ def question1():
 		                       )
 	return render_template('question1.html', title=title, form=form)
 
-
-
 @app.route('/question2',methods=['GET','POST'])
 def question2():
+	title = 'show the number of quakes for magnitude below 1, 1 to 2,' \
+	        '2 to 3, up to magnitude 5.Show a Bar Chart'
+	form = Mag1Form()
+	if form.validate_on_submit():
+		min_mag = form.min_mag.data
+		max_mag = form.max_mag.data
+		labels = []
+		data = []
+		for i in range(min_mag, max_mag):
+			labels.append("{}-{} mag level".format(i, i+1))
+			results = SQLEntity.query.filter(
+				(SQLEntity.mag > i)&
+				(SQLEntity.mag < i+1)
+			).all()
+			data.append(len(results))
+		viz = utils.get_viz('bar', labels, data)
+		return render_template('question2.html', title=title, form=form, viz=viz.render_embed(),
+		                       host=viz.js_host,
+		                       script_list=viz.js_dependencies.items
+		                       )
+	return render_template('question2.html', title=title, form=form)
+
+
+
+@app.route('/question3',methods=['GET','POST'])
+def question3():
 	title = 'What would a graph of magnitude against depth for the 100 recent quakes look like?'
 	form = DateCheckForm()
 	if form.validate_on_submit():
 		results = SQLEntity.query.order_by(SQLEntity.time.desc()).limit(100).all()
 		viz = utils.get_sca(results)
 
-		return render_template('question2.html', title=title, form=form, viz=viz.render_embed(),
+		return render_template('question3.html', title=title, form=form, viz=viz.render_embed(),
 		                       host=viz.js_host,
 		                       script_list=viz.js_dependencies.items
 		                       )
-	return render_template('question2.html', title=title, form=form)
+	return render_template('question3.html', title=title, form=form)
 
 
 
